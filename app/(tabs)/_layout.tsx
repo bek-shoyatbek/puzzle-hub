@@ -29,7 +29,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="puzzle" size={size} color={color} />
           ),
-          headerTitle: "Number Puzzle",
+          headerTitle: "Home",
         }}
       />
 

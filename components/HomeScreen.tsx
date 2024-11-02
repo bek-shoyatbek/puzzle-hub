@@ -59,7 +59,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectGrid }) => {
       <View style={styles.content}>
         <View style={styles.header}>
           <MaterialCommunityIcons name="puzzle" size={40} color="#4CAF50" />
-          <Text style={styles.title}>Number Puzzle</Text>
+          <Text style={styles.title}>Slide Puzzle</Text>
         </View>
 
         <Text style={styles.subtitle}>Select Difficulty</Text>
