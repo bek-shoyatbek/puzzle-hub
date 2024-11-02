@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ozish-maslahatlari",
-    "slug": "ozish-maslahatlari",
+    "name": "brainbox",
+    "slug": "brainbox",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.bek_shoyatbekov.brainbox"
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +32,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "542842a1-3038-40f9-bf1b-d46a194bc8fe"
+      }
+    },
+    "owner": "bek_shoyatbekov"
   }
 }
