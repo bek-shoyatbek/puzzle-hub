@@ -14,9 +14,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   statsContainer: {
-    flex: 1,
     flexDirection: "row",
-    gap: 16,
+    gap: 20,
   },
   statItem: {
     flexDirection: "row",
@@ -27,7 +26,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#666",
   },

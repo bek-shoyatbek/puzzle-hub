@@ -22,6 +22,7 @@ import {
 } from "@/helpers/game";
 import { GameScreenProps, Position } from "@/types/game";
 import { calculateStars } from "@/helpers/game/calculate-stars";
+import { addScore } from "@/utils/leaderboard";
 
 const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
   // State
@@ -36,6 +37,24 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [stars, setStars] = useState(0);
 
+  const [timeSeconds, setTimeSeconds] = useState(0);
+  const [isGameActive, setIsGameActive] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startTimer = () => {
+    setIsGameActive(true);
+    timerRef.current = setInterval(() => {
+      setTimeSeconds((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsGameActive(false);
+  };
   // Refs for animations
   const animatedTiles = useRef<{
     [key: number]: {
@@ -101,6 +120,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
       tile.rotate.setValue(0);
     });
 
+    setTimeSeconds(0);
+    stopTimer();
+    startTimer();
+
     setGrid(newGrid);
     setEmptyPosition(currentEmptyPos);
     setMoves(0);
@@ -125,7 +148,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
 
   const handleGameWon = async () => {
     try {
+      stopTimer();
+
       Vibration.vibrate([0, 50, 50, 50]);
+
+      await addScore({
+        moves,
+        time_seconds: timeSeconds,
+        difficulty: `${rows}x${cols}` as "3x3" | "4x4" | "5x5",
+      });
 
       Animated.parallel([
         Animated.sequence([
@@ -161,19 +192,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
         }),
       ]).start();
 
-      const currentHighScore = await AsyncStorage.getItem(
-        `highScore_${rows}x${cols}`
-      );
-      const newHighScore =
-        currentHighScore === null || moves < parseInt(currentHighScore);
-
-      if (newHighScore) {
-        await AsyncStorage.setItem(
-          `highScore_${rows}x${cols}`,
-          moves.toString()
-        );
-      }
-
       const minPossibleMoves = calculateMinimumMoves(grid, rows, cols);
       const newStars = calculateStars(moves, minPossibleMoves);
       setStars(newStars);
@@ -202,7 +220,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
     value: number,
     fromPos: Position,
     toPos: Position,
-    onComplete: () => void
+    onComplete: () => void,
   ) => {
     const from = getPositionFromIndex(fromPos.row, fromPos.col);
     const to = getPositionFromIndex(toPos.row, toPos.col);
@@ -255,7 +273,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
   const renderTile = (
     number: number | null,
     rowIndex: number,
-    colIndex: number
+    colIndex: number,
   ) => {
     if (number === null) return null;
 
@@ -300,6 +318,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
     );
   };
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
   const { width } = Dimensions.get("window");
   const TILE_SIZE = (width - 40) / cols;
 
@@ -311,6 +337,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
           <View style={styles.statItem}>
             <MaterialCommunityIcons name="counter" size={24} color="#666" />
             <Text style={styles.statText}>Moves: {moves}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <MaterialCommunityIcons name="timer" size={24} color="#666" />
+            <Text style={styles.statText}>
+              Time: {Math.floor(timeSeconds / 60)}:
+              {(timeSeconds % 60).toString().padStart(2, "0")}
+            </Text>
           </View>
         </View>
         <TouchableOpacity
@@ -439,13 +472,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ rows, cols }) => {
         show={showWinAlert}
         showProgress={false}
         title="Congratulations! 🎉"
-        message={`You solved the puzzle in ${moves} moves!\n${
-          stars === 3
-            ? "Perfect! You're a puzzle master! ⭐⭐⭐"
-            : stars === 2
-            ? "Great job! Keep practicing! ⭐⭐"
-            : "Well done! Try to use fewer moves next time! ⭐"
-        }`}
+        message={`You solved the puzzle in ${moves} moves!
+       Time: ${Math.floor(timeSeconds / 60)}:${(timeSeconds % 60).toString().padStart(2, "0")}
+       ${
+         stars === 3
+           ? "Perfect! You're a puzzle master! ⭐⭐⭐"
+           : stars === 2
+             ? "Great job! Keep practicing! ⭐⭐"
+             : "Well done! Try to use fewer moves next time! ⭐"
+       }`}
         closeOnTouchOutside={false}
         closeOnHardwareBackPress={false}
         showCancelButton={true}
