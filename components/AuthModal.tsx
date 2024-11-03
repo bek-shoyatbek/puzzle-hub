@@ -1,16 +1,28 @@
-// components/AuthModal/AuthModal.tsx
 import React from "react";
 import {
   View,
   Text,
   Modal,
   TouchableOpacity,
-  TextInput,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useAuth } from "@/hooks/useAuth";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
+import { supabase } from "@/utils/supabase";
+import { createOrUpdateProfile } from "@/utils/auth";
+import { googleWebClientId } from "@/config";
+
+// Initialize Google Sign-In
+GoogleSignin.configure({
+  webClientId: googleWebClientId,
+  offlineAccess: true,
+});
 
 interface AuthModalProps {
   visible: boolean;
@@ -18,25 +30,60 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
-  const [isLogin, setIsLogin] = React.useState(true);
-  const [username, setUsername] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const { signIn, signUp } = useAuth();
+  const [loading, setLoading] = React.useState(false);
 
-  const handleSubmit = async () => {
+  const handleGoogleSignIn = async () => {
     try {
-      if (isLogin) {
-        await signIn(email, password);
-      } else {
-        await signUp(username, email, password);
+      setLoading(true);
+
+      // Check Google Play Services
+      await GoogleSignin.hasPlayServices();
+
+      // Sign in with Google
+      const response = await GoogleSignin.signIn();
+      const idToken = response.data?.idToken;
+
+      if (!idToken) {
+        throw new Error("No ID token present");
       }
-      onClose();
-      setUsername("");
-      setEmail("");
-      setPassword("");
+
+      // Sign in with Supabase
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: idToken,
+        });
+
+      if (authError) {
+        console.error("Supabase auth error:", authError);
+        throw authError;
+      }
+
+      if (authData?.user) {
+        // Create or update user profile
+        await createOrUpdateProfile(
+          authData.user.id,
+          authData.user.email!,
+          response.data?.user.name ?? "",
+          response.data?.user.photo ?? "",
+        );
+
+        onClose();
+      }
     } catch (error: any) {
-      Alert.alert("Error", error?.message);
+      console.error("Full error:", error);
+
+      if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log("Process cancelled");
+      } else if (error?.code === statusCodes.IN_PROGRESS) {
+        console.log("Sign in is in progress");
+      } else if (error?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert("Error", "Play services not available");
+      } else {
+        Alert.alert("Error", error.message || "Failed to sign in with Google");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,62 +97,34 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {isLogin ? "Sign In" : "Sign Up"}
-            </Text>
-            <TouchableOpacity onPress={onClose}>
+            <Text style={styles.modalTitle}>Sign In</Text>
+            <TouchableOpacity onPress={onClose} disabled={loading}>
               <MaterialCommunityIcons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
-
-          {!isLogin && (
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
-          )}
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>
-              {isLogin ? "Sign In" : "Sign Up"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setIsLogin(!isLogin)}
-          >
-            <Text style={styles.switchButtonText}>
-              {isLogin
-                ? "Don't have an account? Sign Up"
-                : "Already have an account? Sign In"}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#4285F4" />
+            ) : (
+              <GoogleSigninButton
+                size={GoogleSigninButton.Size.Wide}
+                color={GoogleSigninButton.Color.Dark}
+                onPress={handleGoogleSignIn}
+                style={styles.googleButton}
+                disabled={loading}
+              />
+            )}
+          </View>
+          <Text style={styles.disclaimer}>
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </Text>
         </View>
       </View>
     </Modal>
   );
 };
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -123,40 +142,47 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 30,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "600",
     color: "#333",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  submitButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 8,
-    padding: 14,
+  buttonContainer: {
     alignItems: "center",
-    marginTop: 8,
+    gap: 20,
+    marginBottom: 20,
   },
-  submitButtonText: {
+  supabaseButton: {
+    backgroundColor: "#4285F4",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
+    width: "100%",
+    gap: 10,
+  },
+  supabaseButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },
-  switchButton: {
-    marginTop: 16,
-    alignItems: "center",
+  googleButton: {
+    width: 240,
+    height: 48,
   },
-  switchButtonText: {
-    color: "#4CAF50",
-    fontSize: 14,
+  orText: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  disclaimer: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 12,
+    marginTop: 20,
   },
 });
 
