@@ -1,131 +1,71 @@
-import React, { useEffect, useState } from "react";
+// components/Leaderboard.tsx
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
+  StyleSheet,
+  ActivityIndicator,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useAuth } from "@/hooks/useAuth";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { getLeaderboard, LeaderboardEntry } from "@/utils/leaderboard";
 
-type Difficulty = "2x3" | "3x3" | "3x4" | "4x4";
+type Difficulty = "2x3" | "3x3" | "4x4" | "5x5";
 
-interface LeaderboardEntry {
-  id: string;
-  playerName: string;
-  moves: number;
-  time: string;
-  date: string;
-  difficulty: Difficulty;
-}
-
-const mockLeaderboard: LeaderboardEntry[] = [
-  {
-    id: "1",
-    playerName: "Alex",
-    moves: 45,
-    time: "1:23",
-    date: "2024-03-28",
-    difficulty: "3x3",
-  },
-  {
-    id: "2",
-    playerName: "Sarah",
-    moves: 38,
-    time: "1:15",
-    date: "2024-03-28",
-    difficulty: "3x3",
-  },
-  {
-    id: "3",
-    playerName: "Mike",
-    moves: 52,
-    time: "1:45",
-    date: "2024-03-27",
-    difficulty: "3x3",
-  },
-  {
-    id: "4",
-    playerName: "Emma",
-    moves: 42,
-    time: "1:30",
-    date: "2024-03-27",
-    difficulty: "2x3",
-  },
-  {
-    id: "5",
-    playerName: "John",
-    moves: 65,
-    time: "2:10",
-    date: "2024-03-26",
-    difficulty: "3x4",
-  },
-  {
-    id: "6",
-    playerName: "Lisa",
-    moves: 85,
-    time: "3:05",
-    date: "2024-03-26",
-    difficulty: "4x4",
-  },
-  {
-    id: "7",
-    playerName: "Tom",
-    moves: 41,
-    time: "1:28",
-    date: "2024-03-25",
-    difficulty: "3x3",
-  },
-  {
-    id: "8",
-    playerName: "Anna",
-    moves: 48,
-    time: "1:40",
-    date: "2024-03-25",
-    difficulty: "3x3",
-  },
-  {
-    id: "9",
-    playerName: "David",
-    moves: 55,
-    time: "1:55",
-    date: "2024-03-24",
-    difficulty: "3x4",
-  },
-  {
-    id: "10",
-    playerName: "Julia",
-    moves: 43,
-    time: "1:32",
-    date: "2024-03-24",
-    difficulty: "3x3",
-  },
-];
-
-const difficulties: Difficulty[] = ["2x3", "3x3", "3x4", "4x4"];
-
-export default function LeaderboardScreen() {
+const Leaderboard = () => {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty>("3x3");
 
-//   const { user } = useAuth();
-
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>(
-    []
-  );
-  const { fetchLeaderboard, loading } = useLeaderboard();
+  const loadLeaderboard = async (difficulty: Difficulty) => {
+    try {
+      const data = await getLeaderboard(difficulty);
+      setEntries(data);
+    } catch (error) {
+      console.error("Error loading leaderboard:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    if (selectedDifficulty) {
-      fetchLeaderboard(selectedDifficulty).then(setLeaderboardData);
-    }
+    loadLeaderboard(selectedDifficulty);
   }, [selectedDifficulty]);
 
-  const filteredLeaderboard = leaderboardData
-    .filter((entry) => entry.difficulty === selectedDifficulty)
-    .sort((a, b) => a.moves - b.moves);
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadLeaderboard(selectedDifficulty);
+  };
+
+  const renderDifficultySelector = () => (
+    <View style={styles.difficultyContainer}>
+      {(["2x3", "3x3", "4x4", "5x5"] as Difficulty[]).map((difficulty) => (
+        <TouchableOpacity
+          key={difficulty}
+          style={[
+            styles.difficultyButton,
+            selectedDifficulty === difficulty && styles.selectedDifficulty,
+          ]}
+          onPress={() => setSelectedDifficulty(difficulty)}
+        >
+          <Text
+            style={[
+              styles.difficultyText,
+              selectedDifficulty === difficulty &&
+                styles.selectedDifficultyText,
+            ]}
+          >
+            {difficulty}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   const renderItem = ({
     item,
@@ -134,142 +74,96 @@ export default function LeaderboardScreen() {
     item: LeaderboardEntry;
     index: number;
   }) => (
-    <View style={[styles.leaderboardItem, index < 3 && styles.topThree]}>
+    <View style={styles.entryContainer}>
       <View style={styles.rankContainer}>
         {index < 3 ? (
           <MaterialCommunityIcons
-            name={
-              index === 0 ? "trophy" : index === 1 ? "medal" : "medal-outline"
-            }
+            name="medal"
             size={24}
-            color={
-              index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : "#CD7F32"
-            }
+            color={["#FFD700", "#C0C0C0", "#CD7F32"][index]}
           />
         ) : (
           <Text style={styles.rankText}>{index + 1}</Text>
         )}
       </View>
-
       <View style={styles.playerInfo}>
-        <Text style={styles.playerName}>{item.playerName}</Text>
-        <Text style={styles.dateText}>{item.date}</Text>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <MaterialCommunityIcons name="counter" size={16} color="#666" />
-          <Text style={styles.statText}>{item.moves}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <MaterialCommunityIcons name="clock-outline" size={16} color="#666" />
-          <Text style={styles.statText}>{item.time}</Text>
+        <Text style={styles.playerName}>{item.player_name}</Text>
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsText}>Moves: {item.moves}</Text>
+          <Text style={styles.statsText}>Time: {item.time}</Text>
         </View>
       </View>
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.difficultySelector}>
-        {difficulties.map((difficulty) => (
-          <TouchableOpacity
-            key={difficulty}
-            style={[
-              styles.difficultyButton,
-              selectedDifficulty === difficulty && styles.selectedDifficulty,
-            ]}
-            onPress={() => setSelectedDifficulty(difficulty)}
-          >
-            <Text
-              style={[
-                styles.difficultyText,
-                selectedDifficulty === difficulty &&
-                  styles.selectedDifficultyText,
-              ]}
-            >
-              {difficulty}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
+      {renderDifficultySelector()}
       <FlatList
-        data={filteredLeaderboard}
+        data={entries}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons
-              name="trophy-broken"
-              size={48}
-              color="#ccc"
-            />
-            <Text style={styles.emptyText}>
-              No scores yet for this difficulty
-            </Text>
-          </View>
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No scores yet</Text>
+          </View>
+        )}
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
-  difficultySelector: {
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  difficultyContainer: {
     flexDirection: "row",
     padding: 16,
+    justifyContent: "center",
     gap: 8,
-    backgroundColor: "#fff",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   difficultyButton: {
-    flex: 1,
-    padding: 8,
-    borderRadius: 8,
-    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 16,
     backgroundColor: "#f0f0f0",
   },
   selectedDifficulty: {
     backgroundColor: "#4CAF50",
   },
   difficultyText: {
-    fontSize: 14,
-    fontWeight: "600",
     color: "#666",
+    fontWeight: "600",
   },
   selectedDifficultyText: {
     color: "#fff",
   },
-  listContainer: {
-    padding: 16,
-    gap: 8,
-  },
-  leaderboardItem: {
+  entryContainer: {
     flexDirection: "row",
-    alignItems: "center",
     padding: 16,
     backgroundColor: "#fff",
-    borderRadius: 12,
+    marginHorizontal: 16,
     marginBottom: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  topThree: {
-    borderWidth: 1,
-    borderColor: "#4CAF50",
+    borderRadius: 8,
+    alignItems: "center",
   },
   rankContainer: {
     width: 40,
@@ -277,8 +171,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rankText: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
     color: "#666",
   },
   playerInfo: {
@@ -290,33 +184,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
-  dateText: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
-  },
   statsContainer: {
     flexDirection: "row",
-    gap: 16,
+    marginTop: 4,
+    gap: 12,
   },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statText: {
+  statsText: {
     fontSize: 14,
     color: "#666",
   },
   emptyContainer: {
+    padding: 32,
     alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
   },
   emptyText: {
-    marginTop: 16,
     fontSize: 16,
     color: "#666",
-    textAlign: "center",
   },
 });
+
+export default Leaderboard;
