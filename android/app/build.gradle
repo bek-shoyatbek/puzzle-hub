@@ -193,6 +193,8 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    implementation 'com.google.android.gms:play-services-auth:20.0.7'
 }
 
 if (rnVersion < versionToNumber(0, 75, 0)) {
