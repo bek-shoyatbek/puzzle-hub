@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   container: {
@@ -34,32 +34,12 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FF9800",
     padding: 12,
     borderRadius: 8,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    transform: [{ scale: 1 }], // For animation base state
-  },
-  resetButtonPressed: {
-    transform: [{ scale: 0.95 }],
   },
   grid: {
     alignItems: "center",
     backgroundColor: "#e0e0e0",
     borderRadius: 10,
     padding: 5,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.27,
-    shadowRadius: 4.65,
     marginVertical: 10,
   },
   row: {
@@ -72,46 +52,21 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    overflow: "hidden",
     backgroundColor: "rgba(0,0,0,0.1)",
   },
   tile: {
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
-    backfaceVisibility: "hidden", // Improves performance
   },
   movableTile: {
-    backgroundColor: "#66BB6A",
-    transform: [{ scale: 1.02 }],
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
     borderColor: "rgba(255,255,255,0.2)",
   },
   tileText: {
     color: "#fff",
     fontWeight: "bold",
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-    includeFontPadding: false, // Improves text alignment
-    textAlign: "center",
   },
   exitButton: {
     flexDirection: "row",
@@ -124,107 +79,10 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#f44336",
     backgroundColor: "rgba(244, 67, 54, 0.1)",
-    elevation: 2,
-    shadowColor: "#f44336",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    transform: [{ scale: 1 }], // For animation base state
-  },
-  exitButtonPressed: {
-    transform: [{ scale: 0.98 }],
   },
   exitButtonText: {
     color: "#f44336",
     fontSize: 18,
     fontWeight: "600",
-  },
-  alertTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#333",
-    textShadowColor: "rgba(0, 0, 0, 0.1)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-    marginBottom: 8,
-  },
-  alertMessage: {
-    fontSize: 16,
-    textAlign: "center",
-    color: "#666",
-    lineHeight: 24,
-  },
-  // Added new styles for celebration and overlay
-  celebrationText: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#FFD700",
-    textShadowColor: "rgba(0,0,0,0.2)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-    textAlign: "center",
-  },
-  celebrationOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255,215,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-  starContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 12,
-  },
-  star: {
-    fontSize: 24,
-    color: "#FFD700",
-    textShadowColor: "rgba(0,0,0,0.2)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  // Alert customization styles
-  alertContainer: {
-    borderRadius: 15,
-    padding: 20,
-    backgroundColor: "#fff",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  alertButton: {
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    minWidth: 100,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  alertButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  // New styles for better touch feedback
-  pressable: {
-    transform: [{ scale: 1 }],
-  },
-  pressablePressed: {
-    transform: [{ scale: 0.98 }],
-  },
+  }
 });
