@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  Alert,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuth } from "@/hooks/useAuth";
+import { router } from "expo-router";
 
 type GridSize = {
   rows: number;
@@ -32,8 +35,20 @@ const CARD_WIDTH = (width - 60) / 2;
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ onSelectGrid }) => {
   const [selectedGrid, setSelectedGrid] = useState<GridSize | null>(null);
+  const { user } = useAuth();
 
   const handleStartGame = () => {
+    if (!user) {
+      Alert.alert("Error", "Please sign in to play", [
+        {
+          text: "Sign in",
+          onPress: () => {
+            router.replace("/(tabs)/settings");
+          },
+        },
+      ]);
+      return;
+    }
     if (selectedGrid) {
       onSelectGrid(selectedGrid.rows, selectedGrid.cols);
     }
