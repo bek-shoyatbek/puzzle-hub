@@ -6,6 +6,7 @@ export interface AuthState {
     user: {
         id: string;
         email: string;
+        avatar_url: string | null;
         username: string;
     } | null;
     loading: boolean;
@@ -46,7 +47,7 @@ export function useAuth() {
     const fetchUser = async (userId: string) => {
         const { data: user, error } = await supabase
             .from('users')
-            .select('id, username, email')
+            .select('id, username, email, avatar_url')
             .eq('id', userId)
             .single();
 
