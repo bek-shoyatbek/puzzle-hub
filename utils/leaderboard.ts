@@ -7,6 +7,7 @@ export interface LeaderboardEntry {
   time: string;
   difficulty: "3x3" | "4x4" | "5x5";
   date: string;
+  user_id: string; // Added to help with uniqueness check
 }
 
 export interface UserScore {
@@ -49,10 +50,7 @@ export const getLeaderboard = async (
 ) => {
   let query = supabase
     .from("formatted_leaderboard")
-    .select("*")
-    .order("moves", { ascending: true })
-    .order("time", { ascending: true })
-    .limit(limit);
+    .select("*");
 
   if (difficulty) {
     query = query.eq("difficulty", difficulty);
@@ -65,7 +63,29 @@ export const getLeaderboard = async (
     throw error;
   }
 
-  return data as LeaderboardEntry[];
+  // Process data to get best score for each unique user
+  const uniqueUserScores = data.reduce((acc: { [key: string]: LeaderboardEntry }, entry) => {
+    if (!acc[entry.user_id] ||
+      entry.moves < acc[entry.user_id].moves ||
+      (entry.moves === acc[entry.user_id].moves &&
+        entry.time < acc[entry.user_id].time)) {
+      acc[entry.user_id] = entry;
+    }
+    return acc;
+  }, {});
+
+  // Convert back to array and sort
+  const sortedEntries = Object.values(uniqueUserScores)
+    .sort((a, b) => {
+      if (a.moves !== b.moves) {
+        return a.moves - b.moves;
+      }
+      // If moves are equal, sort by time
+      return a.time.localeCompare(b.time);
+    })
+    .slice(0, limit);
+
+  return sortedEntries as LeaderboardEntry[];
 };
 
 // Get user's best scores
